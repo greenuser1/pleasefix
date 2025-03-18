@@ -53,7 +53,6 @@ app.use(
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true, // Prevents JavaScript from reading the cookie
       path: "/", // Ensure cookie is available for all paths
-      domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
     },
   }),
 )

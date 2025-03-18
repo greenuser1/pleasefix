@@ -1,4 +1,4 @@
-const { verifyToken } = require("../utils/jwt")
+const { verifyToken } = require("../utils/token")
 
 module.exports = (req, res, next) => {
   console.log("Auth middleware check - Session ID:", req.session.id)
@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
     return next()
   }
 
-  // If no session, check for JWT token in cookies or Authorization header
+  // If no session, check for token in cookies or Authorization header
   const token =
     req.cookies["greentrack.token"] || (req.headers.authorization && req.headers.authorization.split(" ")[1])
 

@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 const User = require("../models/User")
 const bcrypt = require("bcrypt")
-const { generateToken } = require("../utils/jwt")
+const { generateToken, verifyToken } = require("../utils/token")
 
 // Session test endpoint
 router.get("/session-test", (req, res) => {
@@ -67,7 +67,7 @@ router.post("/register", async (req, res) => {
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
 
-      // Generate JWT token as fallback
+      // Generate token as fallback
       const token = generateToken(userData)
 
       // Explicitly set cookie
@@ -76,17 +76,15 @@ router.post("/register", async (req, res) => {
         secure: false, // Set to false for now
         sameSite: "none",
         path: "/",
-        domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       })
 
-      // Set JWT token cookie
+      // Set token cookie
       res.cookie("greentrack.token", token, {
         httpOnly: false, // Allow JavaScript to read this cookie
         secure: false, // Set to false for now
         sameSite: "none",
         path: "/",
-        domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       })
 
@@ -132,7 +130,7 @@ router.post("/login", async (req, res) => {
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
 
-      // Generate JWT token as fallback
+      // Generate token as fallback
       const token = generateToken(userData)
 
       // Explicitly set cookie
@@ -141,17 +139,15 @@ router.post("/login", async (req, res) => {
         secure: false, // Set to false for now
         sameSite: "none",
         path: "/",
-        domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       })
 
-      // Set JWT token cookie
+      // Set token cookie
       res.cookie("greentrack.token", token, {
         httpOnly: false, // Allow JavaScript to read this cookie
         secure: false, // Set to false for now
         sameSite: "none",
         path: "/",
-        domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
       })
 
@@ -178,14 +174,12 @@ router.post("/logout", (req, res) => {
       httpOnly: true,
       secure: false,
       sameSite: "none",
-      domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
     })
     res.clearCookie("greentrack.token", {
       path: "/",
       httpOnly: false,
       secure: false,
       sameSite: "none",
-      domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
     })
     res.json({ message: "Logged out successfully" })
   })
@@ -203,7 +197,7 @@ router.get("/me", (req, res) => {
     })
   }
 
-  // If no session, check for JWT token in cookies or Authorization header
+  // If no session, check for token in cookies or Authorization header
   const token =
     req.cookies["greentrack.token"] || (req.headers.authorization && req.headers.authorization.split(" ")[1])
 
@@ -212,7 +206,6 @@ router.get("/me", (req, res) => {
   }
 
   // Verify token
-  const { verifyToken } = require("../utils/jwt")
   const decoded = verifyToken(token)
 
   if (!decoded) {

@@ -257,6 +257,7 @@ export default {
         this.loading = true;
         console.log('Fetching plants...');
         const plants = await api.get('/plants');
+        console.log('Plants received:', plants);
         this.plants = plants || [];
         
         // Fetch care logs for each plant
@@ -268,6 +269,11 @@ export default {
       } catch (error) {
         console.error('Error fetching plants:', error);
         this.loading = false;
+        
+        // If unauthorized, redirect to login
+        if (error.status === 401) {
+          this.$router.push('/');
+        }
       }
     },
     async fetchPlantCareLogs(plantId) {
@@ -280,6 +286,11 @@ export default {
         console.error(`Error fetching care logs for plant ${plantId}:`, error);
         // Initialize with empty array if there's an error
         this.plantCareLogs[plantId] = [];
+        
+        // If unauthorized, redirect to login
+        if (error.status === 401) {
+          this.$router.push('/');
+        }
       }
     },
     async addPlant() {
@@ -292,6 +303,11 @@ export default {
       } catch (error) {
         console.error('Error adding plant:', error);
         alert('Failed to add plant: ' + (error.message || 'Unknown error'));
+        
+        // If unauthorized, redirect to login
+        if (error.status === 401) {
+          this.$router.push('/');
+        }
       }
     },
     openEditPlantModal(plant) {
@@ -370,10 +386,14 @@ export default {
     },
     async logout() {
       try {
+        console.log('Logging out...');
         await api.post('/auth/logout');
+        console.log('Logout successful, redirecting to login page');
         this.$router.push('/');
       } catch (error) {
         console.error('Error logging out:', error);
+        // Even if logout fails, redirect to login page
+        this.$router.push('/');
       }
     },
     goToPlantDetail(plantId) {
@@ -504,3 +524,4 @@ export default {
   color: var(--error);
 }
 </style>
+

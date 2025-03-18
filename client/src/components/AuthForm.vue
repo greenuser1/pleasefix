@@ -99,9 +99,16 @@ export default {
           ? { email: this.form.email, password: this.form.password }
           : this.form;
           
-        await api.request('POST', endpoint, data);
-        this.$router.push('/plants');
+        console.log(`Submitting ${this.isLogin ? 'login' : 'register'} form to ${endpoint}`);
+        const response = await api.request('POST', endpoint, data);
+        console.log('Authentication response:', response);
+        
+        // Force a small delay to ensure the session is properly set
+        setTimeout(() => {
+          this.$router.push('/plants');
+        }, 300);
       } catch (error) {
+        console.error('Authentication error:', error);
         this.errorMessage = error.message || 'An error occurred';
       }
     }
@@ -167,3 +174,4 @@ export default {
   font-weight: 500;
 }
 </style>
+

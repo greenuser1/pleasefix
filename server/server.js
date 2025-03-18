@@ -12,9 +12,8 @@ const app = express()
 app.use(
   cors({
     origin: [
-      "https://s25-midterm-project-greenuser1.onrender.com",
-      "http://localhost:8080",
-      "https://s25-midterm-project-greenuser1.onrender.com",
+      "https://pleasefix-1.onrender.com", // Only your new frontend domain
+      "http://localhost:8080", // Keep localhost for development
     ],
     credentials: true,
   }),
@@ -27,10 +26,14 @@ connectDB()
 
 app.use(
   session({
-    secret: "greentrack-super-secret-key-123", 
+    secret: "greentrack-super-secret-key-123",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 },
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Set secure to true in production
+      sameSite: "none", // Important for cross-site cookies
+      maxAge: 24 * 60 * 60 * 1000,
+    },
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://greendb:test11@greentrack.9xjck.mongodb.net/greentrack?retryWrites=true&w=majority",
       collectionName: "sessions",
@@ -187,3 +190,4 @@ const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })
+

@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://greentrack-esmw.onrender.com/api"
+  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Only your new backend URL
 
 export default {
   request(method, endpoint, data = null) {
@@ -75,7 +75,6 @@ export default {
 
   // Helper methods for common HTTP requests
   get(endpoint) {
-    
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
 
     if (formattedEndpoint.startsWith("/plants/") && formattedEndpoint.split("/").length === 3) {
@@ -172,3 +171,4 @@ export default {
     return this.delete(`/care-logs/${careLogId}`)
   },
 }
+

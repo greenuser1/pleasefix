@@ -7,11 +7,13 @@ import WateringCalculator from "@/components/WateringCalculator.vue"
 const checkAuth = () => {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest()
-    
+
     const apiUrl =
       window.location.hostname === "localhost"
         ? "http://localhost:3001/api/auth/me"
-        : "https://greentrack-esmw.onrender.com/api/auth/me"
+        : "https://pleasefix.onrender.com/api/auth/me" // Only your new backend URL
+
+    xhr.withCredentials = true
 
     xhr.open("GET", apiUrl)
     xhr.withCredentials = true
@@ -76,3 +78,4 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
+

@@ -1,143 +1,81 @@
 const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Your backend URL
+  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api"
+
+console.log(`API base URL: ${API_BASE_URL}`)
 
 export default {
   request(method, endpoint, data = null) {
     return new Promise((resolve, reject) => {
-      // Add this debug log
       const fullUrl = `${API_BASE_URL}${endpoint}`
-      console.log(`Making ${method} request to full URL: ${fullUrl}`)
+      console.log(`Making ${method} request to: ${fullUrl}`)
 
-      const xhr = new XMLHttpRequest()
-      xhr.open(method, fullUrl)
-      xhr.setRequestHeader("Content-Type", "application/json")
-      xhr.withCredentials = true // Important for cookies
+      try {
+        const xhr = new XMLHttpRequest()
+        xhr.open(method, fullUrl)
+        xhr.setRequestHeader("Content-Type", "application/json")
+        xhr.withCredentials = true
 
-      xhr.onload = () => {
-        console.log(`API response status for ${endpoint}: ${xhr.status}`)
+        xhr.onload = () => {
+          console.log(`Response status for ${endpoint}: ${xhr.status}`)
 
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText)
-            console.log(`API response from ${endpoint}:`, response)
-
-            // Store the response in sessionStorage for certain endpoints
-            if (endpoint.startsWith("/plants/") && method === "GET") {
-              try {
-                // Store plant details
-                sessionStorage.setItem(`plant_${endpoint.split("/")[2]}`, JSON.stringify(response))
-              } catch (e) {
-                console.warn("Failed to store plant data in sessionStorage:", e)
-              }
-            } else if (endpoint === "/care-logs" && method === "GET") {
-              try {
-                // Store care logs
-                sessionStorage.setItem("care_logs", JSON.stringify(response))
-              } catch (e) {
-                console.warn("Failed to store care logs in sessionStorage:", e)
-              }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText)
+              console.log(`Response from ${endpoint}:`, response)
+              resolve(response)
+            } catch (e) {
+              console.log(`Response from ${endpoint} (not JSON):`, xhr.responseText)
+              resolve(xhr.responseText)
+            }
+          } else {
+            let errorMessage = "An error occurred"
+            try {
+              const errorData = JSON.parse(xhr.responseText)
+              errorMessage = errorData.message || errorData.error || errorMessage
+            } catch (e) {
+              console.error(`Failed to parse error response:`, xhr.responseText)
             }
 
-            resolve(response)
-          } catch (e) {
-            console.log(`API response from ${endpoint} (not JSON):`, xhr.responseText)
-            resolve(xhr.responseText)
+            console.error(`API error (${xhr.status}) from ${endpoint}:`, errorMessage)
+            reject({
+              status: xhr.status,
+              message: errorMessage,
+            })
           }
-        } else {
-          let errorMessage = "An error occurred"
-          try {
-            const errorData = JSON.parse(xhr.responseText)
-            errorMessage = errorData.message || errorData.error || errorMessage
-          } catch (e) {
-            console.error(`Failed to parse error response for ${endpoint}:`, xhr.responseText)
-          }
-
-          console.error(`API error (${xhr.status}) from ${endpoint}:`, errorMessage)
-          reject({
-            status: xhr.status,
-            message: errorMessage,
-          })
         }
-      }
 
-      xhr.onerror = () => {
-        console.error(`Network error for ${endpoint}`)
-        reject({ status: 0, message: "Network Error" })
-      }
+        xhr.onerror = (e) => {
+          console.error(`Network error for ${endpoint}:`, e)
+          reject({ status: 0, message: "Network Error - Please check your connection" })
+        }
 
-      if (data) {
-        console.log(`Request data for ${endpoint}:`, data)
-      }
+        xhr.ontimeout = () => {
+          console.error(`Request timeout for ${endpoint}`)
+          reject({ status: 0, message: "Request timed out - Server may be unavailable" })
+        }
 
-      xhr.send(data ? JSON.stringify(data) : null)
+        if (data) {
+          console.log(`Request data for ${endpoint}:`, data)
+          xhr.send(JSON.stringify(data))
+        } else {
+          xhr.send()
+        }
+      } catch (error) {
+        console.error(`Exception during request to ${endpoint}:`, error)
+        reject({ status: 0, message: `Request failed: ${error.message}` })
+      }
     })
   },
 
-  // Helper methods for common HTTP requests
+  // Rest of your methods remain the same
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
-
-    if (formattedEndpoint.startsWith("/plants/") && formattedEndpoint.split("/").length === 3) {
-      const plantId = formattedEndpoint.split("/")[2]
-      const cachedData = sessionStorage.getItem(`plant_${plantId}`)
-
-      if (cachedData) {
-        try {
-          const parsedData = JSON.parse(cachedData)
-          console.log(`Using cached data for ${formattedEndpoint}`)
-
-          this.request("GET", formattedEndpoint)
-            .then((freshData) => {
-              sessionStorage.setItem(`plant_${plantId}`, JSON.stringify(freshData))
-            })
-            .catch((err) => console.warn(`Background refresh failed for ${formattedEndpoint}:`, err))
-
-          return Promise.resolve(parsedData)
-        } catch (e) {
-          console.warn("Failed to parse cached data:", e)
-        }
-      }
-    } else if (formattedEndpoint === "/care-logs") {
-      const cachedData = sessionStorage.getItem("care_logs")
-
-      if (cachedData) {
-        try {
-          const parsedData = JSON.parse(cachedData)
-          console.log(`Using cached data for ${formattedEndpoint}`)
-
-          this.request("GET", formattedEndpoint)
-            .then((freshData) => {
-              sessionStorage.setItem("care_logs", JSON.stringify(freshData))
-            })
-            .catch((err) => console.warn(`Background refresh failed for ${formattedEndpoint}:`, err))
-
-          return Promise.resolve(parsedData)
-        } catch (e) {
-          console.warn("Failed to parse cached data:", e)
-        }
-      }
-    }
-
     return this.request("GET", formattedEndpoint)
   },
 
   post(endpoint, data) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
-    return this.request("POST", formattedEndpoint, data).then((response) => {
-      if (formattedEndpoint === "/care-logs") {
-        const cachedData = sessionStorage.getItem("care_logs")
-        if (cachedData) {
-          try {
-            const parsedData = JSON.parse(cachedData)
-            parsedData.unshift(response) // Add new care log to the beginning
-            sessionStorage.setItem("care_logs", JSON.stringify(parsedData))
-          } catch (e) {
-            console.warn("Failed to update cached care logs:", e)
-          }
-        }
-      }
-      return response
-    })
+    return this.request("POST", formattedEndpoint, data)
   },
 
   put(endpoint, data) {

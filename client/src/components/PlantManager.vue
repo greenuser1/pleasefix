@@ -399,7 +399,10 @@ export default {
     goToPlantDetail(plantId) {
       if (plantId) {
         console.log('Navigating to plant detail:', plantId);
-        this.$router.push(`/plants/${plantId}`);
+        this.$router.push({
+          name: 'plant-detail',
+          params: { id: plantId }
+        });
       } else {
         console.error('Cannot navigate to plant detail: Invalid plant ID');
       }

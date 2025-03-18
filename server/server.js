@@ -4,6 +4,7 @@ const MongoStore = require("connect-mongo")
 const cors = require("cors")
 const path = require("path")
 const connectDB = require("./config/db")
+const cookieParser = require("cookie-parser")
 
 // Initialize express app
 const app = express()
@@ -25,6 +26,7 @@ app.use(
 // Body parser middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
 
 // Database connection
 connectDB()
@@ -66,7 +68,10 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", "true")
   res.header("Access-Control-Allow-Origin", req.headers.origin)
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
-  res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept")
+  res.header(
+    "Access-Control-Allow-Headers",
+    "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Authorization",
+  )
 
   next()
 })
@@ -80,171 +85,23 @@ app.get("/", (req, res) => {
   `)
 })
 
-// Session test route
-app.get("/api/session-test", (req, res) => {
-  if (!req.session.views) {
-    req.session.views = 1
-  } else {
-    req.session.views++
-  }
-
+// API route
+app.get("/api", (req, res) => {
   res.json({
+    message: "API is running",
     sessionId: req.session.id,
-    views: req.session.views,
     user: req.session.user || null,
   })
 })
 
-// Auth routes
-app.post("/api/auth/register", async (req, res) => {
-  try {
-    const { username, email, password } = req.body
-    const User = require("./models/User")
-    const bcrypt = require("bcrypt")
-
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }],
-    })
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists with that email or username",
-      })
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10)
-    const passwordHash = await bcrypt.hash(password, salt)
-
-    // Create new user
-    const user = new User({
-      username,
-      email,
-      passwordHash,
-    })
-
-    await user.save()
-
-    // Set session
-    req.session.user = {
-      id: user._id.toString(),
-      username: user.username,
-    }
-
-    // Save the session explicitly
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err)
-        return res.status(500).json({ message: "Session error" })
-      }
-
-      console.log("Session saved successfully:", req.session.id)
-      console.log("User in session after save:", req.session.user)
-
-      // Explicitly set the cookie
-      res.cookie("greentrack.sid", req.sessionID, {
-        httpOnly: true,
-        secure: false, // Set to false for now
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      })
-
-      res.status(201).json({
-        message: "User registered successfully",
-        user: req.session.user,
-      })
-    })
-  } catch (err) {
-    console.error("Registration error:", err)
-    res.status(500).json({ message: err.message })
-  }
-})
-
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body
-    const User = require("./models/User")
-    const bcrypt = require("bcrypt")
-
-    const user = await User.findOne({ email })
-
-    if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" })
-    }
-
-    const isMatch = await bcrypt.compare(password, user.passwordHash)
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" })
-    }
-
-    // Set session user
-    req.session.user = {
-      id: user._id.toString(),
-      username: user.username,
-    }
-
-    // Save the session explicitly
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err)
-        return res.status(500).json({ message: "Session error" })
-      }
-
-      console.log("Session saved successfully:", req.session.id)
-      console.log("User in session after save:", req.session.user)
-
-      // Explicitly set the cookie
-      res.cookie("greentrack.sid", req.sessionID, {
-        httpOnly: true,
-        secure: false, // Set to false for now
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      })
-
-      res.json({
-        message: "Logged in successfully",
-        user: req.session.user,
-      })
-    })
-  } catch (err) {
-    console.error("Login error:", err)
-    res.status(500).json({ message: err.message })
-  }
-})
-
-app.get("/api/auth/me", (req, res) => {
-  console.log("GET /api/auth/me - Session:", req.session.id)
-  console.log("User in session:", req.session.user || "none")
-
-  if (!req.session.user) {
-    return res.status(401).json({ message: "Not authenticated" })
-  }
-
-  res.json({
-    user: req.session.user,
-    sessionId: req.session.id,
-  })
-})
-
-app.post("/api/auth/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Logout error:", err)
-      return res.status(500).json({ message: "Could not log out" })
-    }
-    res.clearCookie("greentrack.sid")
-    res.json({ message: "Logged out successfully" })
-  })
-})
-
 // Load routes
-const authMiddleware = require("./middleware/authMiddleware")
+const authRoutes = require("./routes/authRoutes")
 const plantRoutes = require("./routes/plantRoutes")
 const careLogRoutes = require("./routes/careLogRoutes")
 
-app.use("/api/plants", authMiddleware, plantRoutes)
-app.use("/api/care-logs", authMiddleware, careLogRoutes)
+app.use("/api/auth", authRoutes)
+app.use("/api/plants", require("./middleware/authMiddleware"), plantRoutes)
+app.use("/api/care-logs", require("./middleware/authMiddleware"), careLogRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {

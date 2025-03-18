@@ -13,7 +13,7 @@ export default {
         const xhr = new XMLHttpRequest()
         xhr.open(method, fullUrl)
         xhr.setRequestHeader("Content-Type", "application/json")
-        xhr.withCredentials = true // Important for cookies
+        xhr.withCredentials = true // Critical for cookies
 
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
@@ -63,22 +63,7 @@ export default {
     })
   },
 
-  // Check if the user is authenticated
-  checkAuth() {
-    return new Promise((resolve) => {
-      this.get("/auth/me")
-        .then((response) => {
-          console.log("Auth check successful:", response)
-          resolve(true)
-        })
-        .catch((error) => {
-          console.log("Auth check failed:", error)
-          resolve(false)
-        })
-    })
-  },
-
-  // Rest of your methods remain the same
+  // Helper methods for common HTTP requests
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("GET", formattedEndpoint)
@@ -97,6 +82,28 @@ export default {
   delete(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("DELETE", formattedEndpoint)
+  },
+
+  // Session test
+  testSession() {
+    return this.get("/session-test")
+  },
+
+  // Auth methods
+  register(userData) {
+    return this.post("/auth/register", userData)
+  },
+
+  login(credentials) {
+    return this.post("/auth/login", credentials)
+  },
+
+  logout() {
+    return this.post("/auth/logout")
+  },
+
+  getCurrentUser() {
+    return this.get("/auth/me")
   },
 
   // Care Log specific methods

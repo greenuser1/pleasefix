@@ -3,7 +3,6 @@ import AuthForm from "@/components/AuthForm.vue"
 import PlantManager from "@/components/PlantManager.vue"
 import PlantDetail from "@/components/PlantDetail.vue"
 import WateringCalculator from "@/components/WateringCalculator.vue"
-import api from "@/services/api"
 
 const routes = [
   {
@@ -35,31 +34,27 @@ const router = createRouter({
   routes,
 })
 
-// Improved router guard
-router.beforeEach(async (to, from, next) => {
+// For now, disable auth checks to make debugging easier
+router.beforeEach((to, from, next) => {
   console.log(`Route navigation: ${from.path} -> ${to.path}`)
 
+  // Skip auth checks for now
+  next()
+
+  // Uncomment this when session is working
+  /*
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    console.log("Route requires authentication, checking...")
-
-    try {
-      const isAuthenticated = await api.checkAuth()
-      console.log(`Authentication check result: ${isAuthenticated ? "Authenticated" : "Not authenticated"}`)
-
-      if (!isAuthenticated) {
-        console.log("Not authenticated, redirecting to login")
-        next("/")
-      } else {
-        console.log("Authenticated, proceeding to route")
-        next()
-      }
-    } catch (error) {
-      console.error("Error during auth check:", error)
-      next("/")
-    }
+    api.getCurrentUser()
+      .then(() => {
+        next();
+      })
+      .catch(() => {
+        next("/");
+      });
   } else {
-    next()
+    next();
   }
+  */
 })
 
 export default router

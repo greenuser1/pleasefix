@@ -70,6 +70,11 @@
           {{ isSubmitting ? 'Please wait...' : (isLogin ? 'Login' : 'Register') }}
         </button>
       </form>
+
+      <div v-if="debugInfo" class="debug-info">
+        <h4>Debug Info</h4>
+        <pre>{{ debugInfo }}</pre>
+      </div>
     </div>
   </div>
 </template>
@@ -88,23 +93,23 @@ export default {
         password: ''
       },
       errorMessage: '',
-      isSubmitting: false
+      isSubmitting: false,
+      debugInfo: null
     };
   },
   mounted() {
     console.log('AuthForm component mounted');
-    this.checkIfAlreadyLoggedIn();
+    this.testSession();
   },
   methods: {
-    async checkIfAlreadyLoggedIn() {
+    async testSession() {
       try {
-        const isAuthenticated = await api.checkAuth();
-        if (isAuthenticated) {
-          console.log('User is already authenticated, redirecting to plants page');
-          this.$router.push('/plants');
-        }
+        const response = await api.testSession();
+        this.debugInfo = JSON.stringify(response, null, 2);
+        console.log('Session test:', response);
       } catch (error) {
-        console.error('Error checking authentication status:', error);
+        console.error('Session test error:', error);
+        this.debugInfo = JSON.stringify(error, null, 2);
       }
     },
     
@@ -112,30 +117,33 @@ export default {
       try {
         this.isSubmitting = true;
         this.errorMessage = '';
-        const endpoint = this.isLogin ? '/auth/login' : '/auth/register';
-        const data = this.isLogin 
-          ? { email: this.form.email, password: this.form.password }
-          : this.form;
-          
-        console.log(`Submitting ${this.isLogin ? 'login' : 'register'} form to ${endpoint}`);
-        const response = await api.request('POST', endpoint, data);
+        
+        let response;
+        if (this.isLogin) {
+          console.log('Logging in with:', { email: this.form.email });
+          response = await api.login({ 
+            email: this.form.email, 
+            password: this.form.password 
+          });
+        } else {
+          console.log('Registering with:', { username: this.form.username, email: this.form.email });
+          response = await api.register(this.form);
+        }
+        
         console.log('Authentication response:', response);
         
-        // Verify the session was created
+        // Test session after login/register
+        await this.testSession();
+        
+        // Try to get current user
         try {
-          console.log('Verifying session...');
-          const authCheck = await api.checkAuth();
+          const userResponse = await api.getCurrentUser();
+          console.log('Current user:', userResponse);
           
-          if (authCheck) {
-            console.log('Session verified, redirecting to plants page');
-            this.$router.push('/plants');
-          } else {
-            console.error('Session verification failed');
-            this.errorMessage = 'Authentication succeeded but session verification failed. Please try again.';
-            this.isSubmitting = false;
-          }
-        } catch (verifyError) {
-          console.error('Error verifying session:', verifyError);
+          // If we get here, authentication worked
+          this.$router.push('/plants');
+        } catch (error) {
+          console.error('Failed to get current user:', error);
           this.errorMessage = 'Authentication succeeded but session verification failed. Please try again.';
           this.isSubmitting = false;
         }
@@ -219,6 +227,19 @@ export default {
   padding: 0.5rem;
   background-color: rgba(229, 57, 53, 0.1);
   border-radius: var(--radius);
+}
+
+.debug-info {
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  overflow-x: auto;
+}
+
+.debug-info pre {
+  margin: 0;
+  white-space: pre-wrap;
 }
 </style>
 

@@ -445,10 +445,6 @@ methods: {
       this.deletePlant();
     }
   },
-  async deletePl  This action cannot be undone.`)) {
-      this.deletePlant();
-    }
-  },
   async deletePlant() {
     try {
       console.log(`Deleting plant ID: ${this.id}`);

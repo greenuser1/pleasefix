@@ -37,8 +37,6 @@ const router = createRouter({
 
 // Enable auth checks
 router.beforeEach(async (to, from, next) => {
-  console.log(`Route navigation: ${from.path} -> ${to.path}`)
-
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     try {
       // Use our API service instead of direct XMLHttpRequest

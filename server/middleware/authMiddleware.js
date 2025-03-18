@@ -1,13 +1,7 @@
 const { verifyToken } = require("../utils/token")
 
 module.exports = (req, res, next) => {
-  console.log("Auth middleware check - Session ID:", req.session.id)
-  console.log("Auth middleware check - User in session:", req.session.user || "none")
-  console.log("Auth middleware check - Cookies:", req.headers.cookie || "No cookies")
-  console.log("Auth middleware check - Authorization:", req.headers.authorization || "No Authorization header")
-
   if (req.session.user) {
-    console.log("Auth middleware: User authenticated via session")
     return next()
   }
 
@@ -16,7 +10,6 @@ module.exports = (req, res, next) => {
     req.cookies["greentrack.token"] || (req.headers.authorization && req.headers.authorization.replace("Bearer ", ""))
 
   if (!token) {
-    console.log("Auth middleware: No token found")
     return res.status(401).json({ message: "Unauthorized" })
   }
 
@@ -24,7 +17,6 @@ module.exports = (req, res, next) => {
   const decoded = verifyToken(token)
 
   if (!decoded) {
-    console.log("Auth middleware: Invalid token")
     return res.status(401).json({ message: "Unauthorized" })
   }
 
@@ -35,8 +27,6 @@ module.exports = (req, res, next) => {
   }
 
   req.session.save()
-
-  console.log("Auth middleware: User authenticated via token")
   next()
 }
 

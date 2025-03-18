@@ -64,9 +64,6 @@ router.post("/register", async (req, res) => {
         return res.status(500).json({ message: "Session error" })
       }
 
-      console.log("Session saved successfully:", req.session.id)
-      console.log("User in session after save:", req.session.user)
-
       // Generate token as fallback
       const token = generateToken(userData)
 
@@ -127,9 +124,6 @@ router.post("/login", async (req, res) => {
         return res.status(500).json({ message: "Session error" })
       }
 
-      console.log("Session saved successfully:", req.session.id)
-      console.log("User in session after save:", req.session.user)
-
       // Generate token as fallback
       const token = generateToken(userData)
 
@@ -186,10 +180,6 @@ router.post("/logout", (req, res) => {
 })
 
 router.get("/me", (req, res) => {
-  console.log("GET /api/auth/me - Session:", req.session.id)
-  console.log("User in session:", req.session.user || "none")
-  console.log("Cookies:", req.headers.cookie || "none")
-
   if (req.session.user) {
     return res.json({
       user: req.session.user,

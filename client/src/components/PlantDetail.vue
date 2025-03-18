@@ -156,7 +156,6 @@ data() {
   };
 },
 created() {
-  console.log(`PlantDetail component created with ID: ${this.id}`);
   this.fetchPlantData();
   window.addEventListener('beforeunload', this.handleBeforeUnload);
 },
@@ -176,9 +175,7 @@ methods: {
       this.loading = true;
       this.error = null;
       
-      console.log(`Fetching plant data for ID: ${this.id}`);
       const plantData = await api.get(`/plants/${this.id}`);
-      console.log('Plant data received:', plantData);
       this.plant = plantData;
       this.newCareLog.plant = this.id;
       
@@ -199,9 +196,7 @@ methods: {
     try {
       this.careLogsLoading = true;
       
-      console.log(`Fetching care logs for plant ID: ${this.id}`);
       const careLogs = await api.getPlantCareLogs(this.id);
-      console.log(`Received ${careLogs ? careLogs.length : 0} care logs`);
       
       this.careLogs = careLogs || [];
       this.careLogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -220,9 +215,7 @@ methods: {
     try {
       this.addingCareLog = true;
       
-      console.log(`Adding care log for plant ID: ${this.id}`);
       const response = await api.createCareLog(this.newCareLog);
-      console.log('Care log added:', response);
       
       this.careLogs.unshift(response);
       
@@ -267,9 +260,7 @@ methods: {
   },
   async logout() {
     try {
-      console.log('Logging out...');
       await api.logout();
-      console.log('Logout successful, redirecting to login page');
       this.$router.push('/');
     } catch (error) {
       console.error('Error logging out:', error);

@@ -1,8 +1,6 @@
 const API_BASE_URL =
   window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api"
 
-console.log(`API base URL: ${API_BASE_URL}`)
-
 // Helper function to get cookies
 const getCookie = (name) => {
   const value = `; ${document.cookie}`
@@ -37,8 +35,6 @@ export default {
   request(method, endpoint, data = null) {
     return new Promise((resolve, reject) => {
       const fullUrl = `${API_BASE_URL}${endpoint}`
-      console.log(`Making ${method} request to: ${fullUrl}`)
-      console.log(`Current cookies: ${document.cookie || "No cookies"}`)
 
       try {
         const xhr = new XMLHttpRequest()
@@ -50,28 +46,20 @@ export default {
         const token = getToken()
         if (token) {
           xhr.setRequestHeader("Authorization", `Bearer ${token}`)
-          console.log("Added token to Authorization header")
         }
 
         xhr.onload = () => {
-          console.log(`Response status for ${endpoint}: ${xhr.status}`)
-          console.log(`Response cookies: ${document.cookie || "No cookies"}`)
-          console.log(`Response headers: ${xhr.getAllResponseHeaders()}`)
-
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const response = JSON.parse(xhr.responseText)
-              console.log(`Response from ${endpoint}:`, response)
 
               // Store token if present in response
               if (response.token) {
                 storeToken(response.token)
-                console.log("Stored new token from response")
               }
 
               resolve(response)
             } catch (e) {
-              console.log(`Response from ${endpoint} (not JSON):`, xhr.responseText)
               resolve(xhr.responseText)
             }
           } else {
@@ -97,7 +85,6 @@ export default {
         }
 
         if (data) {
-          console.log(`Request data for ${endpoint}:`, data)
           xhr.send(JSON.stringify(data))
         } else {
           xhr.send()

@@ -57,14 +57,8 @@ app.use(
   }),
 )
 
-// Debug middleware
+// Set CORS headers for all responses
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
-  console.log(`Session ID: ${req.session.id}`)
-  console.log(`User in session: ${req.session.user ? JSON.stringify(req.session.user) : "none"}`)
-  console.log(`Cookies: ${req.headers.cookie || "none"}`)
-
-  // Set CORS headers for all responses
   res.header("Access-Control-Allow-Credentials", "true")
   res.header("Access-Control-Allow-Origin", req.headers.origin || "https://pleasefix-1.onrender.com")
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
@@ -79,10 +73,10 @@ app.use((req, res, next) => {
 // Root route
 app.get("/", (req, res) => {
   res.send(`
-    <h1>GreenTrack API</h1>
-    <p>Server is running. Session ID: ${req.session.id}</p>
-    <p>User: ${req.session.user ? JSON.stringify(req.session.user) : "Not logged in"}</p>
-  `)
+  <h1>GreenTrack API</h1>
+  <p>Server is running. Session ID: ${req.session.id}</p>
+  <p>User: ${req.session.user ? JSON.stringify(req.session.user) : "Not logged in"}</p>
+`)
 })
 
 // API route

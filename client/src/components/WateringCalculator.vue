@@ -196,8 +196,7 @@ methods: {
         frequencyDays = Math.floor(frequencyDays * 1.2); 
         break;
       case 'medium':
-        waterAmount *= 1.0;
-        frequencyDays = frequencyDays;
+        // No change for medium sunlight
         break;
     }
     

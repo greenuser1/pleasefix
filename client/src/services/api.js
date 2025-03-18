@@ -3,6 +3,36 @@ const API_BASE_URL =
 
 console.log(`API base URL: ${API_BASE_URL}`)
 
+// Helper function to get cookies
+const getCookie = (name) => {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(";").shift()
+  return null
+}
+
+// Helper function to set cookies
+const setCookie = (name, value, days) => {
+  let expires = ""
+  if (days) {
+    const date = new Date()
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000)
+    expires = `; expires=${date.toUTCString()}`
+  }
+  document.cookie = `${name}=${value}${expires}; path=/; SameSite=None; Secure`
+}
+
+// Get token from cookies or localStorage
+const getToken = () => {
+  return getCookie("greentrack.token") || localStorage.getItem("token")
+}
+
+// Store token in cookies and localStorage
+const storeToken = (token) => {
+  setCookie("greentrack.token", token, 1) // 1 day
+  localStorage.setItem("token", token)
+}
+
 export default {
   request(method, endpoint, data = null) {
     return new Promise((resolve, reject) => {
@@ -16,6 +46,12 @@ export default {
         xhr.setRequestHeader("Content-Type", "application/json")
         xhr.withCredentials = true // Critical for cookies
 
+        // Add token to Authorization header if available
+        const token = getToken()
+        if (token) {
+          xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+        }
+
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
           console.log(`Response cookies: ${document.cookie || "No cookies"}`)
@@ -25,6 +61,12 @@ export default {
             try {
               const response = JSON.parse(xhr.responseText)
               console.log(`Response from ${endpoint}:`, response)
+
+              // Store token if present in response
+              if (response.token) {
+                storeToken(response.token)
+              }
+
               resolve(response)
             } catch (e) {
               console.log(`Response from ${endpoint} (not JSON):`, xhr.responseText)
@@ -101,6 +143,7 @@ export default {
   },
 
   logout() {
+    localStorage.removeItem("token")
     return this.post("/auth/logout")
   },
 

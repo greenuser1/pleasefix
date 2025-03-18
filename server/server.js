@@ -44,7 +44,7 @@ app.use(
   session({
     name: "greentrack.sid", // Custom session name
     secret: "greentrack-super-secret-key-123",
-    resave: false,
+    resave: true, // Changed to true to ensure session is saved
     saveUninitialized: true, // Changed to true to ensure session is created
     store: mongoStore,
     cookie: {
@@ -53,6 +53,7 @@ app.use(
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true, // Prevents JavaScript from reading the cookie
       path: "/", // Ensure cookie is available for all paths
+      domain: ".onrender.com", // Set domain to .onrender.com to allow cross-subdomain cookies
     },
   }),
 )
@@ -66,7 +67,7 @@ app.use((req, res, next) => {
 
   // Set CORS headers for all responses
   res.header("Access-Control-Allow-Credentials", "true")
-  res.header("Access-Control-Allow-Origin", req.headers.origin)
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "https://pleasefix-1.onrender.com")
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
   res.header(
     "Access-Control-Allow-Headers",

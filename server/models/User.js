@@ -1,20 +1,26 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose")
+const bcrypt = require("bcrypt")
 
 const userSchema = new mongoose.Schema({
-  username: { 
-    type: String, 
-    required: true, 
-    unique: true 
+  username: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true 
+  email: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  passwordHash: { 
-    type: String, 
-    required: true 
-  }
-});
+  passwordHash: {
+    type: String,
+    required: true,
+  },
+})
 
-module.exports = mongoose.model('User', userSchema);
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.passwordHash)
+}
+
+module.exports = mongoose.model("User", userSchema)
+

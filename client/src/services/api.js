@@ -8,6 +8,7 @@ export default {
     return new Promise((resolve, reject) => {
       const fullUrl = `${API_BASE_URL}${endpoint}`
       console.log(`Making ${method} request to: ${fullUrl}`)
+      console.log(`Current cookies: ${document.cookie || "No cookies"}`)
 
       try {
         const xhr = new XMLHttpRequest()
@@ -18,6 +19,7 @@ export default {
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
           console.log(`Response cookies: ${document.cookie || "No cookies"}`)
+          console.log(`Response headers: ${xhr.getAllResponseHeaders()}`)
 
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
@@ -86,7 +88,7 @@ export default {
 
   // Session test
   testSession() {
-    return this.get("/session-test")
+    return this.get("/auth/session-test")
   },
 
   // Auth methods

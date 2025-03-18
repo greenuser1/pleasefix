@@ -43,11 +43,11 @@ app.use(
     name: "greentrack.sid", // Custom session name
     secret: "greentrack-super-secret-key-123",
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Changed to true to ensure session is created
     store: mongoStore,
     cookie: {
-      secure: isProduction, // Only use secure in production
-      sameSite: isProduction ? "none" : "lax", // Required for cross-site cookies in production
+      secure: false, // Set to false for now, even in production
+      sameSite: "none", // Required for cross-site cookies
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true, // Prevents JavaScript from reading the cookie
       path: "/", // Ensure cookie is available for all paths
@@ -141,7 +141,14 @@ app.post("/api/auth/register", async (req, res) => {
 
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
-      console.log("Cookies being sent:", res.getHeader("Set-Cookie"))
+
+      // Explicitly set the cookie
+      res.cookie("greentrack.sid", req.sessionID, {
+        httpOnly: true,
+        secure: false, // Set to false for now
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      })
 
       res.status(201).json({
         message: "User registered successfully",
@@ -186,7 +193,14 @@ app.post("/api/auth/login", async (req, res) => {
 
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
-      console.log("Cookies being sent:", res.getHeader("Set-Cookie"))
+
+      // Explicitly set the cookie
+      res.cookie("greentrack.sid", req.sessionID, {
+        httpOnly: true,
+        secure: false, // Set to false for now
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      })
 
       res.json({
         message: "Logged in successfully",

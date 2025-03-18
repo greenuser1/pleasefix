@@ -74,6 +74,8 @@
       <div v-if="debugInfo" class="debug-info">
         <h4>Debug Info</h4>
         <pre>{{ debugInfo }}</pre>
+        <button @click="testSession" class="btn btn-text">Test Session</button>
+        <button @click="checkAuth" class="btn btn-text">Check Auth</button>
       </div>
     </div>
   </div>
@@ -113,6 +115,20 @@ export default {
       }
     },
     
+    async checkAuth() {
+      try {
+        const response = await api.getCurrentUser();
+        this.debugInfo = JSON.stringify(response, null, 2);
+        console.log('Auth check:', response);
+        
+        // If we get here, we're authenticated
+        this.$router.push('/plants');
+      } catch (error) {
+        console.error('Auth check error:', error);
+        this.debugInfo = JSON.stringify(error, null, 2);
+      }
+    },
+    
     async submitForm() {
       try {
         this.isSubmitting = true;
@@ -131,6 +147,7 @@ export default {
         }
         
         console.log('Authentication response:', response);
+        this.debugInfo = JSON.stringify(response, null, 2);
         
         // Test session after login/register
         await this.testSession();
@@ -139,6 +156,7 @@ export default {
         try {
           const userResponse = await api.getCurrentUser();
           console.log('Current user:', userResponse);
+          this.debugInfo = JSON.stringify(userResponse, null, 2);
           
           // If we get here, authentication worked
           this.$router.push('/plants');

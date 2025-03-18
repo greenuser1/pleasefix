@@ -93,8 +93,21 @@ export default {
   },
   mounted() {
     console.log('AuthForm component mounted');
+    this.checkIfAlreadyLoggedIn();
   },
   methods: {
+    async checkIfAlreadyLoggedIn() {
+      try {
+        const isAuthenticated = await api.checkAuth();
+        if (isAuthenticated) {
+          console.log('User is already authenticated, redirecting to plants page');
+          this.$router.push('/plants');
+        }
+      } catch (error) {
+        console.error('Error checking authentication status:', error);
+      }
+    },
+    
     async submitForm() {
       try {
         this.isSubmitting = true;
@@ -108,12 +121,24 @@ export default {
         const response = await api.request('POST', endpoint, data);
         console.log('Authentication response:', response);
         
-        // Force a delay to ensure the session is properly set
-        console.log('Waiting for session to be established...');
-        setTimeout(() => {
-          console.log('Redirecting to plants page...');
-          this.$router.push('/plants');
-        }, 1000);
+        // Verify the session was created
+        try {
+          console.log('Verifying session...');
+          const authCheck = await api.checkAuth();
+          
+          if (authCheck) {
+            console.log('Session verified, redirecting to plants page');
+            this.$router.push('/plants');
+          } else {
+            console.error('Session verification failed');
+            this.errorMessage = 'Authentication succeeded but session verification failed. Please try again.';
+            this.isSubmitting = false;
+          }
+        } catch (verifyError) {
+          console.error('Error verifying session:', verifyError);
+          this.errorMessage = 'Authentication succeeded but session verification failed. Please try again.';
+          this.isSubmitting = false;
+        }
       } catch (error) {
         console.error('Authentication error:', error);
         this.errorMessage = error.message || 'An error occurred';
@@ -146,6 +171,12 @@ export default {
 .auth-header {
   padding: 2rem;
   text-align: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
 }
 
 .auth-subtitle {

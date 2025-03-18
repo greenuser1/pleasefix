@@ -17,6 +17,7 @@ export default {
 
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
+          console.log(`Response cookies: ${document.cookie || "No cookies"}`)
 
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
@@ -62,7 +63,22 @@ export default {
     })
   },
 
-  // Helper methods for common HTTP requests
+  // Check if the user is authenticated
+  checkAuth() {
+    return new Promise((resolve) => {
+      this.get("/auth/me")
+        .then((response) => {
+          console.log("Auth check successful:", response)
+          resolve(true)
+        })
+        .catch((error) => {
+          console.log("Auth check failed:", error)
+          resolve(false)
+        })
+    })
+  },
+
+  // Rest of your methods remain the same
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("GET", formattedEndpoint)

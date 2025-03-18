@@ -9,6 +9,10 @@ const Plant = require("./models/Plant")
 // Initialize express app
 const app = express()
 
+// Get environment
+const isProduction = process.env.NODE_ENV === "production"
+console.log(`Running in ${isProduction ? "production" : "development"} mode`)
+
 // Updated CORS configuration with specific origins and credentials
 app.use(
   cors({
@@ -34,11 +38,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // Use secure cookies in production
-      sameSite: "none", // Required for cross-site cookies
+      secure: isProduction, // Only use secure in production
+      sameSite: isProduction ? "none" : "lax", // Required for cross-site cookies in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true, // Prevents JavaScript from reading the cookie
-      domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined, // Allow cookies across subdomains
+      // Remove domain restriction to allow cookies to work properly
     },
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://greendb:test11@greentrack.9xjck.mongodb.net/greentrack?retryWrites=true&w=majority",
@@ -52,6 +56,7 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
   console.log(`Session ID: ${req.session.id}`)
   console.log(`User in session: ${req.session.user ? JSON.stringify(req.session.user) : "none"}`)
+  console.log(`Cookies: ${req.headers.cookie || "none"}`)
 
   // Set CORS headers for all responses
   res.header("Access-Control-Allow-Credentials", "true")
@@ -161,6 +166,15 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", message: "API is running" })
 })
 
+// Add a session check endpoint
+app.get("/api/session-check", (req, res) => {
+  res.status(200).json({
+    sessionId: req.session.id,
+    user: req.session.user || null,
+    cookies: req.headers.cookie || "No cookies",
+  })
+})
+
 const authMiddleware = (req, res, next) => {
   console.log("Auth middleware check:", req.session.user ? "Authenticated" : "Not authenticated")
   if (!req.session.user) {
@@ -199,9 +213,6 @@ app.get("/api/plants/:id/care-logs", authMiddleware, async (req, res) => {
   }
 })
 
-// Update the authController.js login function
-const authController = require("./controllers/authController")
-
 // Override the loginUser function to properly set the session
 app.post("/api/auth/login", async (req, res) => {
   try {
@@ -232,6 +243,7 @@ app.post("/api/auth/login", async (req, res) => {
 
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
+      console.log("Cookies being sent:", res.getHeader("Set-Cookie"))
 
       res.json({
         message: "Logged in successfully",
@@ -289,6 +301,7 @@ app.post("/api/auth/register", async (req, res) => {
 
       console.log("Session saved successfully:", req.session.id)
       console.log("User in session after save:", req.session.user)
+      console.log("Cookies being sent:", res.getHeader("Set-Cookie"))
 
       res.status(201).json({
         message: "User registered successfully",
@@ -301,12 +314,18 @@ app.post("/api/auth/register", async (req, res) => {
   }
 })
 
-// Add a route to check if the session is working
-app.get("/api/session-test", (req, res) => {
+// Add a custom auth/me endpoint that doesn't use the middleware
+app.get("/api/auth/me", (req, res) => {
+  console.log("GET /api/auth/me - Session:", req.session.id)
+  console.log("User in session:", req.session.user || "none")
+
+  if (!req.session.user) {
+    return res.status(401).json({ message: "Not authenticated" })
+  }
+
   res.json({
+    user: req.session.user,
     sessionId: req.session.id,
-    user: req.session.user || null,
-    cookies: req.headers.cookie || "No cookies",
   })
 })
 
@@ -314,7 +333,15 @@ const authRoutes = require("./routes/authRoutes")
 const plantRoutes = require("./routes/plantRoutes")
 const careLogRoutes = require("./routes/careLogRoutes")
 
-app.use("/api/auth", authRoutes)
+// Use the routes but exclude the /me endpoint from authRoutes
+app.use("/api/auth", (req, res, next) => {
+  if (req.path === "/me") {
+    // Skip this route as we've defined our own above
+    return next("route")
+  }
+  authRoutes(req, res, next)
+})
+
 app.use("/api/plants", plantRoutes)
 app.use("/api/care-logs", careLogRoutes)
 

@@ -9,7 +9,7 @@ const Plant = require("./models/Plant")
 // Initialize express app
 const app = express()
 
-// Updated CORS configuration with specific origins
+// Updated CORS configuration with specific origins and credentials
 app.use(
   cors({
     origin: [
@@ -27,17 +27,18 @@ app.use(express.json())
 // Database connection
 connectDB()
 
-// Updated session configuration for production
+// Fix session configuration for cross-domain cookies
 app.use(
   session({
     secret: "greentrack-super-secret-key-123",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // Always use secure cookies in production
+      secure: true, // Use secure cookies in production
       sameSite: "none", // Required for cross-site cookies
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true, // Prevents JavaScript from reading the cookie
+      domain: process.env.NODE_ENV === "production" ? ".onrender.com" : undefined, // Allow cookies across subdomains
     },
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://greendb:test11@greentrack.9xjck.mongodb.net/greentrack?retryWrites=true&w=majority",
@@ -51,6 +52,13 @@ app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
   console.log(`Session ID: ${req.session.id}`)
   console.log(`User in session: ${req.session.user ? JSON.stringify(req.session.user) : "none"}`)
+
+  // Set CORS headers for all responses
+  res.header("Access-Control-Allow-Credentials", "true")
+  res.header("Access-Control-Allow-Origin", req.headers.origin)
+  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+  res.header("Access-Control-Allow-Headers", "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept")
+
   next()
 })
 
@@ -189,6 +197,117 @@ app.get("/api/plants/:id/care-logs", authMiddleware, async (req, res) => {
     console.error(`Error in direct GET /api/plants/:id/care-logs:`, err)
     res.status(500).json({ error: err.message })
   }
+})
+
+// Update the authController.js login function
+const authController = require("./controllers/authController")
+
+// Override the loginUser function to properly set the session
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body
+    const user = await require("./models/User").findOne({ email })
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" })
+    }
+
+    const isMatch = await require("bcrypt").compare(password, user.passwordHash)
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" })
+    }
+
+    // Set session user
+    req.session.user = {
+      id: user._id.toString(),
+      username: user.username,
+    }
+
+    // Save the session explicitly
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err)
+        return res.status(500).json({ message: "Session error" })
+      }
+
+      console.log("Session saved successfully:", req.session.id)
+      console.log("User in session after save:", req.session.user)
+
+      res.json({
+        message: "Logged in successfully",
+        user: req.session.user,
+      })
+    })
+  } catch (err) {
+    console.error("Login error:", err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// Override the registerUser function to properly set the session
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body
+
+    // Check if user already exists
+    const existingUser = await require("./models/User").findOne({
+      $or: [{ email }, { username }],
+    })
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists with that email or username",
+      })
+    }
+
+    // Hash password
+    const salt = await require("bcrypt").genSalt(10)
+    const passwordHash = await require("bcrypt").hash(password, salt)
+
+    // Create new user
+    const User = require("./models/User")
+    const user = new User({
+      username,
+      email,
+      passwordHash,
+    })
+
+    await user.save()
+
+    // Set session
+    req.session.user = {
+      id: user._id.toString(),
+      username: user.username,
+    }
+
+    // Save the session explicitly
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err)
+        return res.status(500).json({ message: "Session error" })
+      }
+
+      console.log("Session saved successfully:", req.session.id)
+      console.log("User in session after save:", req.session.user)
+
+      res.status(201).json({
+        message: "User registered successfully",
+        user: req.session.user,
+      })
+    })
+  } catch (err) {
+    console.error("Registration error:", err)
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// Add a route to check if the session is working
+app.get("/api/session-test", (req, res) => {
+  res.json({
+    sessionId: req.session.id,
+    user: req.session.user || null,
+    cookies: req.headers.cookie || "No cookies",
+  })
 })
 
 const authRoutes = require("./routes/authRoutes")

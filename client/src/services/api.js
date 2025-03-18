@@ -1,25 +1,29 @@
-// Update the API_BASE_URL to use the correct backend URL
 const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Make sure this matches your actual backend URL
+  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api"
 
 console.log(`API base URL: ${API_BASE_URL}`)
 
-// Add a function to test the API connection
-const testApiConnection = () => {
+// Add a function to test the session
+const testSession = () => {
   const xhr = new XMLHttpRequest()
-  xhr.open("GET", API_BASE_URL.replace("/api", ""))
+  xhr.open("GET", `${API_BASE_URL}/session-test`)
+  xhr.withCredentials = true
   xhr.onload = () => {
-    console.log(`API connection test status: ${xhr.status}`)
-    console.log(`API connection test response: ${xhr.responseText.substring(0, 100)}...`)
+    try {
+      const response = JSON.parse(xhr.responseText)
+      console.log("Session test:", response)
+    } catch (e) {
+      console.error("Failed to parse session test response:", e)
+    }
   }
   xhr.onerror = () => {
-    console.error("API connection test failed with network error")
+    console.error("Session test failed with network error")
   }
   xhr.send()
 }
 
-// Test the connection immediately
-testApiConnection()
+// Test the session after a short delay
+setTimeout(testSession, 1000)
 
 export default {
   request(method, endpoint, data = null) {
@@ -31,15 +35,22 @@ export default {
         const xhr = new XMLHttpRequest()
         xhr.open(method, fullUrl)
         xhr.setRequestHeader("Content-Type", "application/json")
-        xhr.withCredentials = true
+        xhr.withCredentials = true // Important for cookies
 
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
+          console.log(`Response cookies: ${document.cookie || "No cookies"}`)
 
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const response = JSON.parse(xhr.responseText)
               console.log(`Response from ${endpoint}:`, response)
+
+              // Test session after login/register
+              if (endpoint === "/auth/login" || endpoint === "/auth/register") {
+                setTimeout(testSession, 500)
+              }
+
               resolve(response)
             } catch (e) {
               console.log(`Response from ${endpoint} (not JSON):`, xhr.responseText)
@@ -67,11 +78,6 @@ export default {
           reject({ status: 0, message: "Network Error - Please check your connection" })
         }
 
-        xhr.ontimeout = () => {
-          console.error(`Request timeout for ${endpoint}`)
-          reject({ status: 0, message: "Request timed out - Server may be unavailable" })
-        }
-
         if (data) {
           console.log(`Request data for ${endpoint}:`, data)
           xhr.send(JSON.stringify(data))
@@ -85,7 +91,7 @@ export default {
     })
   },
 
-  // Helper methods for common HTTP requests
+  // Rest of your methods remain the same
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("GET", formattedEndpoint)

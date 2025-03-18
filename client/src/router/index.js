@@ -4,17 +4,20 @@ import PlantManager from "@/components/PlantManager.vue"
 import PlantDetail from "@/components/PlantDetail.vue"
 import WateringCalculator from "@/components/WateringCalculator.vue"
 
+// Get the correct API URL
+const getApiUrl = () => {
+  return window.location.hostname === "localhost" ? "http://localhost:3001" : "https://pleasefix.onrender.com" // Make sure this matches your actual backend URL
+}
+
 const checkAuth = () => {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest()
+    const apiUrl = `${getApiUrl()}/api/auth/me`
 
-    const apiUrl =
-      window.location.hostname === "localhost"
-        ? "http://localhost:3001/api/auth/me"
-        : "https://pleasefix.onrender.com/api/auth/me" // Your backend URL
+    console.log(`Checking auth at: ${apiUrl}`)
 
     xhr.open("GET", apiUrl)
-    xhr.withCredentials = true // Important for cookies
+    xhr.withCredentials = true
 
     xhr.onload = () => {
       console.log(`Auth check response status: ${xhr.status}`)

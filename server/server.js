@@ -148,6 +148,11 @@ app.get("/", (req, res) => {
   `)
 })
 
+// Add a health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", message: "API is running" })
+})
+
 const authMiddleware = (req, res, next) => {
   console.log("Auth middleware check:", req.session.user ? "Authenticated" : "Not authenticated")
   if (!req.session.user) {
@@ -197,6 +202,6 @@ app.use("/api/care-logs", careLogRoutes)
 // Hardcoded port
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
 

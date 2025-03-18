@@ -3,6 +3,11 @@ import App from "./App.vue"
 import router from "./router"
 import "./assets/style.css"
 
+// Get the correct API URL
+const getApiUrl = () => {
+  return window.location.hostname === "localhost" ? "http://localhost:3001" : "https://pleasefix.onrender.com" // Make sure this matches your actual backend URL
+}
+
 // Add global error handler
 window.onerror = (message, source, lineno, colno, error) => {
   console.error("Global error:", message, "at", source, lineno, colno, error)
@@ -23,10 +28,9 @@ router.beforeEach((to, from, next) => {
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const xhr = new XMLHttpRequest()
-    const apiUrl =
-      window.location.hostname === "localhost"
-        ? "http://localhost:3001/api/auth/me"
-        : "https://pleasefix.onrender.com/api/auth/me"
+    const apiUrl = `${getApiUrl()}/api/auth/me`
+
+    console.log(`Checking auth at: ${apiUrl}`)
 
     xhr.open("GET", apiUrl)
     xhr.withCredentials = true
@@ -63,6 +67,9 @@ try {
   app.config.globalProperties.$debug = (message, data) => {
     console.log(`[DEBUG] ${message}`, data)
   }
+
+  // Add a global property for the API URL
+  app.config.globalProperties.$apiUrl = getApiUrl()
 
   console.log("Adding router...")
   app.use(router)

@@ -1,7 +1,25 @@
+// Update the API_BASE_URL to use the correct backend URL
 const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api"
+  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Make sure this matches your actual backend URL
 
 console.log(`API base URL: ${API_BASE_URL}`)
+
+// Add a function to test the API connection
+const testApiConnection = () => {
+  const xhr = new XMLHttpRequest()
+  xhr.open("GET", API_BASE_URL.replace("/api", ""))
+  xhr.onload = () => {
+    console.log(`API connection test status: ${xhr.status}`)
+    console.log(`API connection test response: ${xhr.responseText.substring(0, 100)}...`)
+  }
+  xhr.onerror = () => {
+    console.error("API connection test failed with network error")
+  }
+  xhr.send()
+}
+
+// Test the connection immediately
+testApiConnection()
 
 export default {
   request(method, endpoint, data = null) {
@@ -67,7 +85,7 @@ export default {
     })
   },
 
-  // Rest of your methods remain the same
+  // Helper methods for common HTTP requests
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("GET", formattedEndpoint)

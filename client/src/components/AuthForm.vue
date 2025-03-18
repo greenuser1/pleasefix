@@ -100,19 +100,18 @@ methods: {
       this.isSubmitting = true;
       this.errorMessage = '';
       
-      let response;
       if (this.isLogin) {
-        response = await api.login({ 
+        await api.login({ 
           email: this.form.email, 
           password: this.form.password 
         });
       } else {
-        response = await api.register(this.form);
+        await api.register(this.form);
       }
       
       // Try to get current user
       try {
-        const userResponse = await api.getCurrentUser();
+        await api.getCurrentUser();
         
         // If we get here, authentication worked
         this.$router.push('/plants');

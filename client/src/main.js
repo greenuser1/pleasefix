@@ -3,15 +3,15 @@ import App from "./App.vue"
 import router from "./router"
 import "./assets/style.css"
 
-// Get the correct API URL
-const getApiUrl = () => {
-  return window.location.hostname === "localhost" ? "http://localhost:3001" : "https://pleasefix.onrender.com" // Make sure this matches your actual backend URL
-}
-
 // Add global error handler
 window.onerror = (message, source, lineno, colno, error) => {
   console.error("Global error:", message, "at", source, lineno, colno, error)
   return false
+}
+
+// Get the correct API URL
+const getApiUrl = () => {
+  return window.location.hostname === "localhost" ? "http://localhost:3001" : "https://pleasefix.onrender.com" // Make sure this matches your actual backend URL
 }
 
 // Add unhandled promise rejection handler
@@ -69,7 +69,7 @@ try {
   }
 
   // Add a global property for the API URL
-  app.config.globalProperties.$apiUrl = getApiUrl()
+  //app.config.globalProperties.$apiUrl = getApiUrl()
 
   console.log("Adding router...")
   app.use(router)

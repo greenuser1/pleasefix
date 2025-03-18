@@ -3,28 +3,6 @@ const API_BASE_URL =
 
 console.log(`API base URL: ${API_BASE_URL}`)
 
-// Add a function to test the session
-const testSession = () => {
-  const xhr = new XMLHttpRequest()
-  xhr.open("GET", `${API_BASE_URL}/session-test`)
-  xhr.withCredentials = true
-  xhr.onload = () => {
-    try {
-      const response = JSON.parse(xhr.responseText)
-      console.log("Session test:", response)
-    } catch (e) {
-      console.error("Failed to parse session test response:", e)
-    }
-  }
-  xhr.onerror = () => {
-    console.error("Session test failed with network error")
-  }
-  xhr.send()
-}
-
-// Test the session after a short delay
-setTimeout(testSession, 1000)
-
 export default {
   request(method, endpoint, data = null) {
     return new Promise((resolve, reject) => {
@@ -39,18 +17,11 @@ export default {
 
         xhr.onload = () => {
           console.log(`Response status for ${endpoint}: ${xhr.status}`)
-          console.log(`Response cookies: ${document.cookie || "No cookies"}`)
 
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const response = JSON.parse(xhr.responseText)
               console.log(`Response from ${endpoint}:`, response)
-
-              // Test session after login/register
-              if (endpoint === "/auth/login" || endpoint === "/auth/register") {
-                setTimeout(testSession, 500)
-              }
-
               resolve(response)
             } catch (e) {
               console.log(`Response from ${endpoint} (not JSON):`, xhr.responseText)
@@ -91,7 +62,7 @@ export default {
     })
   },
 
-  // Rest of your methods remain the same
+  // Helper methods for common HTTP requests
   get(endpoint) {
     const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`
     return this.request("GET", formattedEndpoint)

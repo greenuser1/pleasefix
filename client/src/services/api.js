@@ -50,6 +50,7 @@ export default {
         const token = getToken()
         if (token) {
           xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+          console.log("Added token to Authorization header")
         }
 
         xhr.onload = () => {
@@ -65,6 +66,7 @@ export default {
               // Store token if present in response
               if (response.token) {
                 storeToken(response.token)
+                console.log("Stored new token from response")
               }
 
               resolve(response)

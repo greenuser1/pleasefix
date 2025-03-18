@@ -36,18 +36,18 @@ const router = createRouter({
 })
 
 // Enable auth checks
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   console.log(`Route navigation: ${from.path} -> ${to.path}`)
 
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    api
-      .getCurrentUser()
-      .then(() => {
-        next()
-      })
-      .catch(() => {
-        next("/")
-      })
+    try {
+      // Use our API service instead of direct XMLHttpRequest
+      await api.getCurrentUser()
+      next()
+    } catch (error) {
+      console.error("Auth check failed:", error)
+      next("/")
+    }
   } else {
     next()
   }

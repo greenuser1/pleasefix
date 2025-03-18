@@ -4,6 +4,7 @@ module.exports = (req, res, next) => {
   console.log("Auth middleware check - Session ID:", req.session.id)
   console.log("Auth middleware check - User in session:", req.session.user || "none")
   console.log("Auth middleware check - Cookies:", req.headers.cookie || "No cookies")
+  console.log("Auth middleware check - Authorization:", req.headers.authorization || "No Authorization header")
 
   if (req.session.user) {
     console.log("Auth middleware: User authenticated via session")
@@ -12,7 +13,7 @@ module.exports = (req, res, next) => {
 
   // If no session, check for token in cookies or Authorization header
   const token =
-    req.cookies["greentrack.token"] || (req.headers.authorization && req.headers.authorization.split(" ")[1])
+    req.cookies["greentrack.token"] || (req.headers.authorization && req.headers.authorization.replace("Bearer ", ""))
 
   if (!token) {
     console.log("Auth middleware: No token found")

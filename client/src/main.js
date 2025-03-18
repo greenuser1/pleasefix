@@ -6,13 +6,12 @@ import "./assets/style.css"
 router.beforeEach((to, from, next) => {
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const xhr = new XMLHttpRequest()
-    // Fix the ESLint error by using the apiUrl variable
     const apiUrl =
       window.location.hostname === "localhost"
         ? "http://localhost:3001/api/auth/me"
-        : "https://pleasefix.onrender.com/api/auth/me" // Your new backend URL
+        : "https://pleasefix.onrender.com/api/auth/me" // Your backend URL
 
-    xhr.open("GET", apiUrl) // Use the variable here
+    xhr.open("GET", apiUrl)
     xhr.withCredentials = true
 
     xhr.onload = () => {

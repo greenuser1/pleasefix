@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Only your new backend URL
+  window.location.hostname === "localhost" ? "http://localhost:3001/api" : "https://pleasefix.onrender.com/api" // Your backend URL
 
 export default {
   request(method, endpoint, data = null) {
@@ -11,7 +11,7 @@ export default {
       const xhr = new XMLHttpRequest()
       xhr.open(method, fullUrl)
       xhr.setRequestHeader("Content-Type", "application/json")
-      xhr.withCredentials = true
+      xhr.withCredentials = true // Important for cookies
 
       xhr.onload = () => {
         console.log(`API response status for ${endpoint}: ${xhr.status}`)

@@ -1,79 +1,3 @@
-<template>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="logo">
-          <span>GreenTrack</span>
-        </div>
-        <p class="auth-subtitle">Keep your plants happy and healthy</p>
-      </div>
-      
-      <div class="tabs">
-        <div 
-          class="tab" 
-          :class="{ active: isLogin }" 
-          @click="isLogin = true"
-        >
-          Login
-        </div>
-        <div 
-          class="tab" 
-          :class="{ active: !isLogin }" 
-          @click="isLogin = false"
-        >
-          Register
-        </div>
-      </div>
-      
-      <form @submit.prevent="submitForm" class="auth-form">
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-        
-        <div v-if="!isLogin" class="form-group">
-          <label for="username" class="form-label">Username</label>
-          <input
-            id="username"
-            v-model="form.username"
-            type="text"
-            class="form-input"
-            placeholder="Enter your username"
-            required
-          />
-        </div>
-        
-        <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            class="form-input"
-            placeholder="Enter your email"
-            required
-          />
-        </div>
-        
-        <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            class="form-input"
-            placeholder="Enter your password"
-            required
-          />
-        </div>
-        
-        <button type="submit" class="btn btn-primary auth-submit">
-          {{ isLogin ? 'Login' : 'Register' }}
-        </button>
-      </form>
-    </div>
-  </div>
-</template>
-
 <script>
 import api from '@/services/api';
 
@@ -87,12 +11,14 @@ export default {
         email: '',
         password: ''
       },
-      errorMessage: ''
+      errorMessage: '',
+      isSubmitting: false
     };
   },
   methods: {
     async submitForm() {
       try {
+        this.isSubmitting = true;
         this.errorMessage = '';
         const endpoint = this.isLogin ? '/auth/login' : '/auth/register';
         const data = this.isLogin 
@@ -103,75 +29,33 @@ export default {
         const response = await api.request('POST', endpoint, data);
         console.log('Authentication response:', response);
         
-        // Force a small delay to ensure the session is properly set
-        setTimeout(() => {
+        // Check if we're authenticated immediately after login/register
+        try {
+          console.log('Verifying authentication...');
+          await api.request('GET', '/auth/me');
+          console.log('Authentication verified, redirecting to plants page');
           this.$router.push('/plants');
-        }, 300);
+        } catch (verifyError) {
+          console.error('Authentication verification failed:', verifyError);
+          
+          // Try one more time with a delay
+          setTimeout(async () => {
+            try {
+              await api.request('GET', '/auth/me');
+              this.$router.push('/plants');
+            } catch (retryError) {
+              this.errorMessage = 'Authentication failed. Please try again.';
+              this.isSubmitting = false;
+            }
+          }, 1000);
+        }
       } catch (error) {
         console.error('Authentication error:', error);
         this.errorMessage = error.message || 'An error occurred';
+        this.isSubmitting = false;
       }
     }
   }
 };
 </script>
-
-<style scoped>
-.auth-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  background-color: var(--background-alt);
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 400px;
-  background-color: var(--background);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.auth-header {
-  padding: 2rem;
-  text-align: center;
-}
-
-.auth-subtitle {
-  margin-top: 0.5rem;
-  color: var(--text-light);
-  font-size: 0.875rem;
-}
-
-.auth-form {
-  padding: 1.5rem;
-}
-
-.auth-submit {
-  width: 100%;
-  margin-top: 1rem;
-}
-
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-}
-
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tab.active {
-  border-bottom: 2px solid var(--primary);
-  color: var(--primary);
-  font-weight: 500;
-}
-</style>
 

@@ -9,13 +9,16 @@ const Plant = require("./models/Plant")
 // Initialize express app
 const app = express()
 
+// Updated CORS configuration with specific origins
 app.use(
   cors({
     origin: [
-      "https://pleasefix-1.onrender.com", // Only your new frontend domain
+      "https://pleasefix-1.onrender.com", // Frontend domain
       "http://localhost:8080", // Keep localhost for development
     ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 )
 
@@ -24,15 +27,17 @@ app.use(express.json())
 // Database connection
 connectDB()
 
+// Updated session configuration for production
 app.use(
   session({
     secret: "greentrack-super-secret-key-123",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Set secure to true in production
-      sameSite: "none", // Important for cross-site cookies
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: true, // Always use secure cookies in production
+      sameSite: "none", // Required for cross-site cookies
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true, // Prevents JavaScript from reading the cookie
     },
     store: MongoStore.create({
       mongoUrl: "mongodb+srv://greendb:test11@greentrack.9xjck.mongodb.net/greentrack?retryWrites=true&w=majority",
@@ -41,8 +46,11 @@ app.use(
   }),
 )
 
+// Debug middleware to log requests and session info
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
+  console.log(`Session ID: ${req.session.id}`)
+  console.log(`User in session: ${req.session.user ? JSON.stringify(req.session.user) : "none"}`)
   next()
 })
 
@@ -141,6 +149,7 @@ app.get("/", (req, res) => {
 })
 
 const authMiddleware = (req, res, next) => {
+  console.log("Auth middleware check:", req.session.user ? "Authenticated" : "Not authenticated")
   if (!req.session.user) {
     return res.status(401).json({ message: "Unauthorized" })
   }
@@ -186,7 +195,7 @@ app.use("/api/plants", plantRoutes)
 app.use("/api/care-logs", careLogRoutes)
 
 // Hardcoded port
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })

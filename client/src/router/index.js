@@ -11,14 +11,13 @@ const checkAuth = () => {
     const apiUrl =
       window.location.hostname === "localhost"
         ? "http://localhost:3001/api/auth/me"
-        : "https://pleasefix.onrender.com/api/auth/me" // Only your new backend URL
-
-    xhr.withCredentials = true
+        : "https://pleasefix.onrender.com/api/auth/me" // Your backend URL
 
     xhr.open("GET", apiUrl)
-    xhr.withCredentials = true
+    xhr.withCredentials = true // Important for cookies
 
     xhr.onload = () => {
+      console.log(`Auth check response status: ${xhr.status}`)
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve(true)
       } else {
@@ -27,6 +26,7 @@ const checkAuth = () => {
     }
 
     xhr.onerror = () => {
+      console.error("Network error during auth check")
       resolve(false)
     }
 
@@ -65,11 +65,18 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  console.log(`Route navigation: ${from.path} -> ${to.path}`)
+
   if (to.matched.some((record) => record.meta.requiresAuth)) {
+    console.log("Route requires authentication, checking...")
     const isAuthenticated = await checkAuth()
+    console.log(`Authentication check result: ${isAuthenticated ? "Authenticated" : "Not authenticated"}`)
+
     if (!isAuthenticated) {
+      console.log("Not authenticated, redirecting to login")
       next("/")
     } else {
+      console.log("Authenticated, proceeding to route")
       next()
     }
   } else {
